@@ -1,5 +1,5 @@
 let buf = Lexing.from_channel stdin;;
-let t = Evaluator.eval (Parser.parse Lexer.lex buf);;
+let t = Evaluator.bigeval (Parser.parse Lexer.lex buf);;
 
 if Syntax.isval t
 then if Syntax.isnumericval t
