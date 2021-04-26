@@ -4,8 +4,7 @@ open Syntax
 
 %token TRUE FALSE IF THEN ELSE ZERO SUCC PRED ISZERO LPAREN RPAREN EOF
 
-%start parse
-%type <Syntax.term> parse
+%start <Syntax.term> parse
 
 %%
 
@@ -15,11 +14,11 @@ parse:
 term:
   | TRUE { TmTrue }
   | FALSE { TmFalse }
-  | IF term THEN term ELSE term { TmIf($2, $4, $6) }
+  | IF t1 = term THEN t2 = term ELSE t3 = term { TmIf(t1, t2, t3) }
   | ZERO { TmZero }
-  | SUCC term { TmSucc($2) }
-  | PRED term { TmPred($2) }
-  | ISZERO term { TmIsZero($2) }
-  | LPAREN term RPAREN { $2 }
+  | SUCC t1 = term { TmSucc(t1) }
+  | PRED t1 = term { TmPred(t1) }
+  | ISZERO t1 = term { TmIsZero(t1) }
+  | LPAREN t1 = term RPAREN { t1 }
 
 %%
