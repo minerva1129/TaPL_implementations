@@ -15,6 +15,9 @@ let rec eval1 = function
   | _ -> raise NoRuleApplies
 
 let rec eval t =
-  try let t' = eval1 t
-    in eval t'
-  with NoRuleApplies -> t
+  let t'opt =
+    try Some (eval1 t)
+    with NoRuleApplies -> None in
+  match t'opt with
+    | Some t' -> eval t'
+    | None -> t
