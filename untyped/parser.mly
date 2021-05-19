@@ -14,7 +14,7 @@ parse:
 
 term:
   | appterm { $1 }
-  | BACKSLASH x = VAR DOT t = term { TmAbs(t) }
+  | BACKSLASH x = VAR DOT t = term { TmAbs(x, t) }
 
 appterm:
   | aterm { $1 }
