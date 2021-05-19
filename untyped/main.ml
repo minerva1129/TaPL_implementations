@@ -3,7 +3,7 @@ let buf = Lexing.from_channel stdin;;
 let indexed_t = buf
   |> Parser.parse Lexer.lex
   |> Syntax.removenames []
-  |> Evaluator.eval
+  |> Evaluator.bigeval
 
 let rec print_term = function
   | Syntax.TmVar(x) -> x
