@@ -55,16 +55,3 @@ let rec eval t =
     | Some t' -> (fun x -> x) (eval t')
     | None -> t
 
-let rec bigeval t =
-  if isval t
-  then t
-  else match t with
-    | ITmApp(t1, t2) -> (
-      let t1' = bigeval t1 in
-      let v2 = bigeval t2 in
-      match t1' with
-        | ITmAbs(t11) when (isval v2) -> bigeval (shift (-1) (substitute 0 (shift 1 v2) t11))
-        | _ -> raise NoRuleApplies
-    )
-    | _ -> raise NoRuleApplies
-
