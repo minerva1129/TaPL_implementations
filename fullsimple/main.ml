@@ -1,7 +1,12 @@
-let buf = Lexing.from_channel stdin
+exception ParsingError
 
-let internal_t = buf
-  |> Parser.parse Lexer.lex
+let input = Opal.LazyStream.of_channel stdin
+
+let t = match Opal.parse Parser.term input with
+  | Some result -> result
+  | None -> raise ParsingError
+
+let internal_t = t
   |> Syntax.removenames []
   |> Evaluator.eval
 
