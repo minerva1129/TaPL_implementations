@@ -9,6 +9,7 @@ type term =
   | TmAbs of string * ty * term
   | TmApp of term * term
   | TmUnit
+  | TmSeq of term * term
 
 (* de Bruijn indexed *)
 type internal_term =
@@ -16,6 +17,16 @@ type internal_term =
   | ITmAbs of ty * internal_term
   | ITmApp of internal_term * internal_term
   | ITmUnit
+
+let shift d =
+  let rec walk c = function
+    | ITmVar(k) -> if k < c
+      then ITmVar(k)
+      else ITmVar(k + d)
+    | ITmAbs(tyT, t) -> ITmAbs(tyT, walk (c + 1) t)
+    | ITmApp(t1, t2) -> ITmApp(walk c t1, walk c t2)
+    | ITmUnit -> ITmUnit
+  in walk 0
 
 let rec index_of context x =
   match context with
@@ -33,6 +44,7 @@ let rec removenames context = function
   | TmAbs(x, tyT, t) -> ITmAbs(tyT, removenames (x::context) t)
   | TmApp(t1, t2) -> ITmApp(removenames context t1, removenames context t2)
   | TmUnit -> ITmUnit
+  | TmSeq(t1, t2) -> ITmApp(ITmAbs(TyUnit, shift 1 (removenames context t2)), removenames context t1)
 
 let isval = function
   | ITmAbs(_, _) -> true

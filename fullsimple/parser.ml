@@ -8,6 +8,7 @@ let token_dot = token ".";;
 let token_unit = token "unit";;
 let token_lparen = token "(";;
 let token_rparen = token ")";;
+let token_semicolon = token ";";;
 let token_identifier = (lexeme (lower <~> many (alpha_num <|> exactly '_'))) => implode;;
 
 let braces x = between token_lparen token_rparen x;;
@@ -30,7 +31,9 @@ let parse_lambda =
   let* _ = token_dot in
   return (fun t -> Syntax.TmAbs(x, tyT, t));;
 let parse_application = space >> return (fun l r -> Syntax.TmApp(l, r));;
+let parse_sequence = token_semicolon >> return (fun l r -> Syntax.TmSeq(l, r));;
 
 let rec atomic_term input = (parse_unit <|> parse_identifier <|> braces term) input
-and application_term input = chainl1 atomic_term parse_application input
-and term input = (application_term <|> (parse_lambda <*> term)) input
+and application_term input = (chainl1 atomic_term parse_application) input
+and sequence_term input = (chainr1 application_term parse_sequence) input
+and term input = (application_term <|> (parse_lambda <*> term)) input;;

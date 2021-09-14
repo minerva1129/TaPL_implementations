@@ -25,5 +25,6 @@ let rec string_of_term = function
   | Syntax.TmAbs(x, tyT, t) -> "(λ" ^ x ^ ": " ^ (string_of_ty tyT) ^ ". " ^ (string_of_term t) ^ ")"
   | Syntax.TmApp(t1, t2) -> "(" ^ (string_of_term t1) ^ " " ^ (string_of_term t2) ^ ")"
   | Syntax.TmUnit -> "unit"
+  | Syntax.TmSeq(t1, t2) -> "(" ^ (string_of_term t1) ^ ")" ^ "; " ^ "(" ^ (string_of_term t2) ^ ")"
 
 let _ = print_string @@ (internal_t |> Syntax.restorenames [] |> string_of_term) ^ ": " ^ (string_of_ty_opt tyT)
