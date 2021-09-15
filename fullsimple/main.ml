@@ -27,5 +27,6 @@ let rec string_of_term = function
   | Syntax.TmUnit -> "unit"
   | Syntax.TmSeq(t1, t2) -> "(" ^ (string_of_term t1) ^ ")" ^ "; " ^ "(" ^ (string_of_term t2) ^ ")"
   | Syntax.TmWildcard(tyT, t) -> "(λ_: " ^ (string_of_ty tyT) ^ ". " ^ (string_of_term t) ^ ")"
+  | Syntax.TmAscribe(t, tyT) -> "(" ^ (string_of_term t) ^ ") as (" ^ (string_of_ty tyT) ^ ")"
 
 let _ = print_string @@ (internal_t |> Syntax.restorenames [] |> string_of_term) ^ ": " ^ (string_of_ty_opt tyT)
