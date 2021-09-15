@@ -10,6 +10,7 @@ type term =
   | TmApp of term * term
   | TmUnit
   | TmSeq of term * term
+  | TmWildcard of ty * term
 
 (* de Bruijn indexed *)
 type internal_term =
@@ -45,6 +46,7 @@ let rec removenames context = function
   | TmApp(t1, t2) -> ITmApp(removenames context t1, removenames context t2)
   | TmUnit -> ITmUnit
   | TmSeq(t1, t2) -> ITmApp(ITmAbs(TyUnit, shift 1 (removenames context t2)), removenames context t1)
+  | TmWildcard(tyT, t) -> ITmAbs(tyT, shift 1 (removenames context t))
 
 let isval = function
   | ITmAbs(_, _) -> true
