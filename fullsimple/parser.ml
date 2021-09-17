@@ -23,8 +23,8 @@ let parse_arrow = token_arrow >> return (fun l r -> Syntax.TyArrow(l, r));;
 let rec atomic_ty input = (parse_Unit <|> braces ty) input
 and ty input = chainr1 atomic_ty parse_arrow input;;
 
-let parse_identifier = token_identifier => fun r -> Syntax.TmVar r;;
-let parse_unit = token_unit >> return Syntax.TmUnit;;
+let parse_identifier = token_identifier => fun r -> Syntax.ETmVar r;;
+let parse_unit = token_unit >> return Syntax.ETmUnit;;
 let parse_lambda term_parser =
   let* _ = token_backslash in
   let* x = token_identifier in
@@ -32,9 +32,9 @@ let parse_lambda term_parser =
   let* tyT = ty in
   let* _ = token_dot in
   let* t = term_parser in
-  return (Syntax.TmAbs(x, tyT, t));;
-let parse_application = space >> return (fun l r -> Syntax.TmApp(l, r));;
-let parse_sequence = token_semicolon >> return (fun l r -> Syntax.TmSeq(l, r));;
+  return (Syntax.ETmAbs(x, tyT, t));;
+let parse_application = space >> return (fun l r -> Syntax.ETmApp(l, r));;
+let parse_sequence = token_semicolon >> return (fun l r -> Syntax.ETmSeq(l, r));;
 let parse_wildcard term_parser =
   let* _ = token_backslash in
   let* _ = token_underscore in
@@ -42,12 +42,12 @@ let parse_wildcard term_parser =
   let* tyT = ty in
   let* _ = token_dot in
   let* t = term_parser in
-  return (Syntax.TmWildcard(tyT, t));;
+  return (Syntax.ETmWildcard(tyT, t));;
 let parse_ascription term_parser =
   let* t = term_parser in
   let* _ = token_as in
   let* tyT = ty in
-  return (Syntax.TmAscribe(t, tyT));;
+  return (Syntax.ETmAscribe(t, tyT));;
 
 let rec atomic_term input = (parse_unit <|> parse_identifier <|> braces term) input
 and ascription_term input = (parse_ascription atomic_term <|> atomic_term) input

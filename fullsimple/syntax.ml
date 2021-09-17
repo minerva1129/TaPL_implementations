@@ -4,20 +4,20 @@ type ty =
   | TyUnit
   | TyArrow of ty * ty
 
-type term =
-  | TmVar of string
-  | TmAbs of string * ty * term
-  | TmApp of term * term
-  | TmUnit
-  | TmSeq of term * term
-  | TmWildcard of ty * term
-  | TmAscribe of term * ty
+type eterm =
+  | ETmVar of string
+  | ETmAbs of string * ty * eterm
+  | ETmApp of eterm * eterm
+  | ETmUnit
+  | ETmSeq of eterm * eterm
+  | ETmWildcard of ty * eterm
+  | ETmAscribe of eterm * ty
 
 (* de Bruijn indexed *)
-type internal_term =
+type iterm =
   | ITmVar of int
-  | ITmAbs of ty * internal_term
-  | ITmApp of internal_term * internal_term
+  | ITmAbs of ty * iterm
+  | ITmApp of iterm * iterm
   | ITmUnit
 
 let shift d =
@@ -38,17 +38,17 @@ let rec index_of context x =
       else Option.map succ (index_of t x)
 
 let rec removenames context = function
-  | TmVar(x) -> (
+  | ETmVar(x) -> (
     match (index_of context x) with
       | None -> raise NoSuchVariable
       | Some(k) -> ITmVar(k)
   )
-  | TmAbs(x, tyT, t) -> ITmAbs(tyT, removenames (x::context) t)
-  | TmApp(t1, t2) -> ITmApp(removenames context t1, removenames context t2)
-  | TmUnit -> ITmUnit
-  | TmSeq(t1, t2) -> ITmApp(ITmAbs(TyUnit, shift 1 (removenames context t2)), removenames context t1)
-  | TmWildcard(tyT, t) -> ITmAbs(tyT, shift 1 (removenames context t))
-  | TmAscribe(t, tyT) -> ITmApp(ITmAbs(tyT, ITmVar(0)), removenames context t)
+  | ETmAbs(x, tyT, t) -> ITmAbs(tyT, removenames (x::context) t)
+  | ETmApp(t1, t2) -> ITmApp(removenames context t1, removenames context t2)
+  | ETmUnit -> ITmUnit
+  | ETmSeq(t1, t2) -> ITmApp(ITmAbs(TyUnit, shift 1 (removenames context t2)), removenames context t1)
+  | ETmWildcard(tyT, t) -> ITmAbs(tyT, shift 1 (removenames context t))
+  | ETmAscribe(t, tyT) -> ITmApp(ITmAbs(tyT, ITmVar(0)), removenames context t)
 
 let isval = function
   | ITmAbs(_, _) -> true
@@ -73,8 +73,8 @@ let rec restorenames context = function
   | ITmVar(k) -> (
     match List.nth_opt context k with
       | None -> raise NoSuchVariable
-      | Some(x) -> TmVar(x)
+      | Some(x) -> ETmVar(x)
   )
-  | ITmAbs(tyT, t) -> let x = pickfreshname context in TmAbs(x, tyT, restorenames (x::context) t)
-  | ITmApp(t1, t2) -> TmApp(restorenames context t1, restorenames context t2)
-  | ITmUnit -> TmUnit
+  | ITmAbs(tyT, t) -> let x = pickfreshname context in ETmAbs(x, tyT, restorenames (x::context) t)
+  | ITmApp(t1, t2) -> ETmApp(restorenames context t1, restorenames context t2)
+  | ITmUnit -> ETmUnit
