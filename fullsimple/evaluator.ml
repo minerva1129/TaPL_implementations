@@ -6,9 +6,8 @@ let rec substitute j s = function
     then s
     else ITmVar(k)
   | ITmAbs(tyT, t) -> ITmAbs(tyT, substitute (j + 1) (Syntax.shift 1 s) t)
-  | ITmApp(t1, t2) -> ITmApp(substitute j s t1, substitute j s t2)
-  | ITmUnit -> ITmUnit
   | ITmLet(t1, t2) -> ITmLet(substitute j s t1, substitute (j + 1) (Syntax.shift 1 s) t2)
+  | t -> Syntax.traverse_iterm (substitute j s) t
 
 let rec eval1 = function
   | ITmApp(ITmAbs(_, t), v) when (isval v) -> Syntax.shift (-1) (substitute 0 (Syntax.shift 1 v) t)

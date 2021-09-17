@@ -38,14 +38,14 @@ let parse_token =
 
 let lex = (many parse_token << spaces) >>= eof
 
-let braces x = between (exactly Token_lparen) (exactly Token_rparen) x
+let parens x = between (exactly Token_lparen) (exactly Token_rparen) x
 let (<*>) xf x = xf >>= fun f -> x >>= f % return
 let (let*) = (>>=)
 
 let parse_Unit = (exactly Token_Unit) >> return Syntax.TyUnit
 let parse_arrow = (exactly Token_arrow) >> return (fun l r -> Syntax.TyArrow(l, r))
 
-let rec atomic_ty input = (parse_Unit <|> braces ty) input
+let rec atomic_ty input = (parse_Unit <|> parens ty) input
 and ty input = chainr1 atomic_ty parse_arrow input;;
 
 let token_identifier = any >>= function
@@ -91,7 +91,7 @@ let parse_let term1_parser term2_parser =
   let* t2 = term2_parser in
   return (Syntax.ETmLet(x, t1, t2))
 
-let rec atomic_term input = (parse_unit <|> parse_identifier <|> braces term) input
+let rec atomic_term input = (parse_unit <|> parse_identifier <|> parens term) input
 and application_term input = (parse_ascription atomic_term <|> chainl1 atomic_term parse_application) input
 and sequence_term input = (chainr1 application_term parse_sequence) input
 and term input = ((parse_wildcard term) <|> (parse_lambda term) <|> (parse_let atomic_term term) <|> sequence_term) input;;

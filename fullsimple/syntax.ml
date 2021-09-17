@@ -22,15 +22,21 @@ type iterm =
   | ITmUnit
   | ITmLet of iterm * iterm
 
+let traverse_iterm f = function
+  | ITmVar(k) -> ITmVar(k)
+  | ITmAbs(tyT, t) -> ITmAbs(tyT, f t)
+  | ITmApp(t1, t2) -> ITmApp(f t1, f t2)
+  | ITmUnit -> ITmUnit
+  | ITmLet(t1, t2) -> ITmLet(f t1, f t2)
+
 let shift d =
   let rec walk c = function
     | ITmVar(k) -> if k < c
       then ITmVar(k)
       else ITmVar(k + d)
     | ITmAbs(tyT, t) -> ITmAbs(tyT, walk (c + 1) t)
-    | ITmApp(t1, t2) -> ITmApp(walk c t1, walk c t2)
-    | ITmUnit -> ITmUnit
     | ITmLet(t1, t2) -> ITmLet(walk c t1, walk (c + 1) t2)
+    | t -> traverse_iterm (walk c) t
   in walk 0
 
 let rec index_of context x =
