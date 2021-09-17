@@ -11,6 +11,9 @@ let token_rparen = token ")";;
 let token_semicolon = token ";";;
 let token_underscore = token "_";;
 let token_as = token "as";;
+let token_let = token "let";;
+let token_equal = token "=";;
+let token_in = token "in";;
 let token_identifier = (lexeme (lower <~> many (alpha_num <|> exactly '_'))) => implode;;
 
 let braces x = between token_lparen token_rparen x;;
@@ -48,9 +51,17 @@ let parse_ascription term_parser =
   let* _ = token_as in
   let* tyT = ty in
   return (Syntax.ETmAscribe(t, tyT));;
+let parse_let term1_parser term2_parser =
+  let* _ = token_let in
+  let* x = token_identifier in
+  let* _ = token_equal in
+  let* t1 = term1_parser in
+  let* _ = token_in in
+  let* t2 = term2_parser in
+  return (Syntax.ETmLet(x, t1, t2));;
 
 let rec atomic_term input = (parse_unit <|> parse_identifier <|> braces term) input
 and ascription_term input = (parse_ascription atomic_term <|> atomic_term) input
 and application_term input = (chainl1 ascription_term parse_application) input
 and sequence_term input = (chainr1 application_term parse_sequence) input
-and term input = (application_term <|> (parse_wildcard term) <|> (parse_lambda term)) input;;
+and term input = ((parse_wildcard term) <|> (parse_lambda term) <|> (parse_let atomic_term term) <|> application_term) input;;

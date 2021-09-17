@@ -19,9 +19,10 @@ let rec string_of_term = function
   | Syntax.ETmAbs(x, tyT, t) -> "(λ" ^ x ^ ": " ^ (string_of_ty tyT) ^ ". " ^ (string_of_term t) ^ ")"
   | Syntax.ETmApp(t1, t2) -> "(" ^ (string_of_term t1) ^ " " ^ (string_of_term t2) ^ ")"
   | Syntax.ETmUnit -> "unit"
-  | Syntax.ETmSeq(t1, t2) -> "(" ^ (string_of_term t1) ^ ")" ^ "; " ^ "(" ^ (string_of_term t2) ^ ")"
+  | Syntax.ETmSeq(t1, t2) -> "(" ^ (string_of_term t1) ^ "; " ^ (string_of_term t2) ^ ")"
   | Syntax.ETmWildcard(tyT, t) -> "(λ_: " ^ (string_of_ty tyT) ^ ". " ^ (string_of_term t) ^ ")"
-  | Syntax.ETmAscribe(t, tyT) -> "(" ^ (string_of_term t) ^ ") as (" ^ (string_of_ty tyT) ^ ")"
+  | Syntax.ETmAscribe(t, tyT) -> "(" ^ (string_of_term t) ^ " as " ^ (string_of_ty tyT) ^ ")"
+  | Syntax.ETmLet(x, t1, t2) -> "(let " ^ x ^ " = " ^ (string_of_term t1) ^ " in " ^ (string_of_term t2) ^ ")"
 
 let print_term_and_ty it = print_endline @@ (it |> Syntax.restorenames [] |> string_of_term) ^ ": " ^ (it |> Typechecker.typeof_opt [] |> string_of_ty_opt)
 let _ = Evaluator.tap_and_eval print_term_and_ty (fun () -> print_endline "Evaluation halted") it

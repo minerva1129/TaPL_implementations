@@ -12,6 +12,7 @@ type eterm =
   | ETmSeq of eterm * eterm
   | ETmWildcard of ty * eterm
   | ETmAscribe of eterm * ty
+  | ETmLet of string * eterm * eterm
 
 (* de Bruijn indexed *)
 type iterm =
@@ -19,6 +20,7 @@ type iterm =
   | ITmAbs of ty * iterm
   | ITmApp of iterm * iterm
   | ITmUnit
+  | ITmLet of iterm * iterm
 
 let shift d =
   let rec walk c = function
@@ -28,6 +30,7 @@ let shift d =
     | ITmAbs(tyT, t) -> ITmAbs(tyT, walk (c + 1) t)
     | ITmApp(t1, t2) -> ITmApp(walk c t1, walk c t2)
     | ITmUnit -> ITmUnit
+    | ITmLet(t1, t2) -> ITmLet(walk c t1, walk (c + 1) t2)
   in walk 0
 
 let rec index_of context x =
@@ -49,6 +52,7 @@ let rec removenames context = function
   | ETmSeq(t1, t2) -> ITmApp(ITmAbs(TyUnit, shift 1 (removenames context t2)), removenames context t1)
   | ETmWildcard(tyT, t) -> ITmAbs(tyT, shift 1 (removenames context t))
   | ETmAscribe(t, tyT) -> ITmApp(ITmAbs(tyT, ITmVar(0)), removenames context t)
+  | ETmLet(x, t1, t2) -> ITmLet(removenames context t1, removenames (x::context) t2)
 
 let isval = function
   | ITmAbs(_, _) -> true
@@ -78,3 +82,4 @@ let rec restorenames context = function
   | ITmAbs(tyT, t) -> let x = pickfreshname context in ETmAbs(x, tyT, restorenames (x::context) t)
   | ITmApp(t1, t2) -> ETmApp(restorenames context t1, restorenames context t2)
   | ITmUnit -> ETmUnit
+  | ITmLet(t1, t2) -> let x = pickfreshname context in ETmLet(x, restorenames context t1, restorenames (x::context) t2)

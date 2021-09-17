@@ -20,6 +20,7 @@ let rec typeof context = function
       | TyArrow(tyT1, tyT2) when typeof context t2 = tyT1 -> tyT2
       | _ -> raise NoTypeRuleApplies
   )
+  | ITmLet(t1, t2) -> let tyT1 = typeof context t1 in typeof (tyT1::context) t2
   | ITmUnit -> TyUnit
 
 let typeof_opt context t =
