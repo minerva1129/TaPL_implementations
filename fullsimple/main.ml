@@ -1,11 +1,5 @@
-exception ParsingError
-
 let input = Opal.LazyStream.of_channel stdin
-
-let et = match Opal.parse Parser.term input with
-  | Some result -> result
-  | None -> raise ParsingError
-
+let et = Parser.lex_and_parse input
 let it = Syntax.removenames [] et
 
 let rec string_of_ty = function
