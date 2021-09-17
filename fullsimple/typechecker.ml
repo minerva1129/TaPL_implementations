@@ -22,6 +22,6 @@ let rec typeof context = function
   )
   | ITmUnit -> TyUnit
 
-let rec typeof_opt context t =
+let typeof_opt context t =
   try Some (typeof context t)
   with NoTypeRuleApplies -> None

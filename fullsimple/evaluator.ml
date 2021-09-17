@@ -22,3 +22,12 @@ let rec eval t =
   match t'opt with
     | Some t' -> eval t'
     | None -> t
+
+let rec tap_and_eval f g t =
+  let _ = f t in
+  let t'opt =
+    try Some(eval1 t)
+    with NoEvaluationRuleApplies -> None in
+  match t'opt with
+    | Some t' -> tap_and_eval f g t'
+    | None -> g ()
