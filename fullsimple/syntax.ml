@@ -1,8 +1,10 @@
 exception NoSuchVariable
+exception NoSuchField
 
 type ty =
   | TyUnit
   | TyArrow of ty * ty
+  | TyRecord of (string * ty) list
 
 type eterm =
   | ETmVar of string
@@ -13,6 +15,8 @@ type eterm =
   | ETmWildcard of ty * eterm
   | ETmAscribe of eterm * ty
   | ETmLet of string * eterm * eterm
+  | ETmRecord of (string * eterm) list
+  | ETmProj of eterm * string
 
 (* de Bruijn indexed *)
 type iterm =
@@ -21,6 +25,8 @@ type iterm =
   | ITmApp of iterm * iterm
   | ITmUnit
   | ITmLet of iterm * iterm
+  | ITmRecord of (string * iterm) list
+  | ITmProj of iterm * string
 
 let traverse_iterm f = function
   | ITmVar(k) -> ITmVar(k)
@@ -28,6 +34,8 @@ let traverse_iterm f = function
   | ITmApp(t1, t2) -> ITmApp(f t1, f t2)
   | ITmUnit -> ITmUnit
   | ITmLet(t1, t2) -> ITmLet(f t1, f t2)
+  | ITmRecord(ls) -> ITmRecord(List.map (fun (k, t) -> (k, f t)) ls)
+  | ITmProj(t, k) -> ITmProj(f t, k)
 
 let shift d =
   let rec walk c = function
@@ -59,10 +67,13 @@ let rec removenames context = function
   | ETmWildcard(tyT, t) -> ITmAbs(tyT, shift 1 (removenames context t))
   | ETmAscribe(t, tyT) -> ITmApp(ITmAbs(tyT, ITmVar(0)), removenames context t)
   | ETmLet(x, t1, t2) -> ITmLet(removenames context t1, removenames (x::context) t2)
+  | ETmRecord(ls) -> ITmRecord(List.map (fun (k, t) -> (k, removenames context t)) ls)
+  | ETmProj(t, k) -> ITmProj(removenames context t, k)
 
-let isval = function
+let rec isval = function
   | ITmAbs(_, _) -> true
   | ITmUnit -> true
+  | ITmRecord(ls) -> List.for_all (fun (k, t) -> isval t) ls
   | _ -> false
 
 let pickfreshname context =
@@ -89,3 +100,5 @@ let rec restorenames context = function
   | ITmApp(t1, t2) -> ETmApp(restorenames context t1, restorenames context t2)
   | ITmUnit -> ETmUnit
   | ITmLet(t1, t2) -> let x = pickfreshname context in ETmLet(x, restorenames context t1, restorenames (x::context) t2)
+  | ITmRecord(ls) -> ETmRecord(List.map (fun (k, t) -> (k, restorenames context t)) ls)
+  | ITmProj(t, k) -> ETmProj(restorenames context t, k)

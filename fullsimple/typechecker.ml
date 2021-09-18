@@ -22,6 +22,16 @@ let rec typeof context = function
   )
   | ITmLet(t1, t2) -> let tyT1 = typeof context t1 in typeof (tyT1::context) t2
   | ITmUnit -> TyUnit
+  | ITmRecord(ls) -> TyRecord(List.map (fun (k, t) -> (k, typeof context t)) ls)
+  | ITmProj(t, k) -> (
+    match typeof context t with
+      | TyRecord(ls) -> (
+        match List.assoc_opt k ls with
+          | Some(tyT) -> tyT
+          | None -> raise Syntax.NoSuchField
+      )
+      | _ -> raise NoTypeRuleApplies
+  )
 
 let typeof_opt context t =
   try Some (typeof context t)
