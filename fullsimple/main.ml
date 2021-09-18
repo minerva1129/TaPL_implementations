@@ -1,6 +1,6 @@
 let input = Opal.LazyStream.of_channel stdin
 let et = Parser.lex_and_parse input
-let it = Syntax.removenames [] et
+let it = Compiler.removenames [] et
 
 let rec string_of_ty = function
   | Syntax.TyUnit -> "Unit"
@@ -21,5 +21,5 @@ let rec string_of_term = function
   | Syntax.ETmRecord(ls) -> "{ " ^ (String.concat ", " (List.map (fun (k, t) -> k ^ " = " ^ (string_of_term t)) ls)) ^ " }"
   | Syntax.ETmProj(t, x) -> "(" ^ (string_of_term t) ^ "." ^ x ^ ")"
 
-let print_term_and_ty it = print_endline @@ (it |> Syntax.restorenames [] |> string_of_term) ^ ": " ^ (it |> Typechecker.typeof_opt [] |> string_of_ty_opt)
+let print_term_and_ty it = print_endline @@ (it |> Compiler.restorenames [] |> string_of_term) ^ ": " ^ (it |> Typechecker.typeof_opt [] |> string_of_ty_opt)
 let _ = Evaluator.tap_and_eval print_term_and_ty (fun () -> print_endline "Evaluation halted") it

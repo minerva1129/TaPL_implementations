@@ -1,17 +1,11 @@
+open Utils
 open Syntax
 exception NoTypeRuleApplies
-
-let rec index_of context x =
-  match context with
-    | [] -> None
-    | h::t -> if h = x
-      then Some 0
-      else Option.map succ (index_of t x)
 
 let rec typeof context = function
   | ITmVar(k) -> (
     match List.nth_opt context k with
-      | None -> raise Syntax.NoSuchVariable
+      | None -> raise NoSuchVariable
       | Some(tyT) -> tyT
   )
   | ITmAbs(tyT, t) -> TyArrow(tyT, typeof (tyT::context) t)
@@ -28,7 +22,7 @@ let rec typeof context = function
       | TyRecord(ls) -> (
         match List.assoc_opt k ls with
           | Some(tyT) -> tyT
-          | None -> raise Syntax.NoSuchField
+          | None -> raise NoSuchField
       )
       | _ -> raise NoTypeRuleApplies
   )
