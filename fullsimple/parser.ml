@@ -52,18 +52,18 @@ let token_identifier = any >>= function
   | Token_identifier(x) -> return x
   | _ -> mzero
 
-let parse_key_elem elem_parser =
+let parse_key_ty ty_parser =
   let* x = token_identifier in
-  let* _ = (exactly Token_equal) in
-  let* e = elem_parser in
-  return (x, e)
+  let* _ = (exactly Token_colon) in
+  let* tyT = ty_parser in
+  return (x, tyT)
 
 let parse_Unit = (exactly Token_Unit) >> return Syntax.TyUnit
 let parse_arrow = (exactly Token_arrow) >> return (fun l r -> Syntax.TyArrow(l, r))
 
 let parse_record_ty ty_parser =
   let* _ = (exactly Token_lbrace) in
-  let* ls = sep_by (parse_key_elem ty_parser) (exactly Token_comma) in
+  let* ls = sep_by (parse_key_ty ty_parser) (exactly Token_comma) in
   let* _ = (exactly Token_rbrace) in
   return (Syntax.TyRecord(ls))
 
@@ -73,62 +73,62 @@ and ty input = chainr1 atomic_ty parse_arrow input
 let parse_identifier = token_identifier => fun x -> Syntax.ETmVar x
 let parse_unit = (exactly Token_unit) >> return Syntax.ETmUnit
 
-let parse_lambda term_parser =
+let parse_lambda =
   let* _ = (exactly Token_backslash) in
   let* x = token_identifier in
   let* _ = (exactly Token_colon) in
   let* tyT = ty in
   let* _ = (exactly Token_dot) in
-  let* t = term_parser in
-  return (Syntax.ETmAbs(x, tyT, t))
+  return (fun t -> Syntax.ETmAbs(x, tyT, t))
 
 let parse_application = return (fun l r -> Syntax.ETmApp(l, r))
 let parse_sequence = (exactly Token_semicolon) >> return (fun l r -> Syntax.ETmSeq(l, r))
 
-let parse_wildcard term_parser =
+let parse_wildcard =
   let* _ = (exactly Token_backslash) in
   let* _ = (exactly Token_underscore) in
   let* _ = (exactly Token_colon) in
   let* tyT = ty in
   let* _ = (exactly Token_dot) in
-  let* t = term_parser in
-  return (Syntax.ETmWildcard(tyT, t))
+  return (fun t -> Syntax.ETmWildcard(tyT, t))
 
-let parse_ascription term_parser =
-  let* t = term_parser in
+let parse_ascription =
   let* _ = (exactly Token_as) in
   let* tyT = ty in
-  return (Syntax.ETmAscribe(t, tyT))
+  return (fun t -> Syntax.ETmAscribe(t, tyT))
 
-let parse_let term1_parser term2_parser =
+let parse_let term_parser =
   let* _ = (exactly Token_let) in
   let* x = token_identifier in
   let* _ = (exactly Token_equal) in
-  let* t1 = term1_parser in
+  let* t1 = term_parser in
   let* _ = (exactly Token_in) in
-  let* t2 = term2_parser in
-  return (Syntax.ETmLet(x, t1, t2))
+  return (fun t2 -> Syntax.ETmLet(x, t1, t2))
+
+let parse_key_term term_parser =
+  let* x = token_identifier in
+  let* _ = (exactly Token_equal) in
+  let* t = term_parser in
+  return (x, t)
 
 let parse_record term_parser =
   let* _ = (exactly Token_lbrace) in
-  let* ls = sep_by (parse_key_elem term_parser) (exactly Token_comma) in
+  let* ls = sep_by (parse_key_term term_parser) (exactly Token_comma) in
   let* _ = (exactly Token_rbrace) in
   return (Syntax.ETmRecord(ls))
 
-let parse_proj t =
+let parse_proj =
   let* _ = (exactly Token_dot) in
   let* k = token_identifier in
-  return (Syntax.ETmProj(t, k))
+  return (fun t -> Syntax.ETmProj(t, k))
 
-let parse_proj_chain term_parser =
-  let rec loop t = (parse_proj t >>= loop) <|> return t in
-  term_parser >>= loop
+let rec parse_proj_chain t = ((parse_proj <*> return t) >>= parse_proj_chain) <|> return t
 
 let rec atomic_term input = (parse_record term <|> parse_unit <|> parse_identifier <|> parens term) input
-and projection_term input = parse_proj_chain atomic_term input
-and application_term input = (parse_ascription projection_term <|> chainl1 projection_term parse_application) input
+and projection_term input = (atomic_term >>= parse_proj_chain) input
+and application_term input = ((return (|>) <*> projection_term <*> parse_ascription) <|> chainl1 projection_term parse_application) input
 and sequence_term input = (chainr1 application_term parse_sequence) input
-and term input = ((parse_wildcard term) <|> (parse_lambda term) <|> (parse_let atomic_term term) <|> sequence_term) input
+and term input = ((parse_wildcard <*> term) <|> (parse_lambda <*> term) <|> (parse_let atomic_term <*> term) <|> sequence_term) input
 
 let lex_and_parse input = match parse lex input with
   | Some(tokens) -> (
