@@ -5,6 +5,7 @@ type ty =
   | TyUnit
   | TyArrow of ty * ty
   | TyRecord of (string * ty) list
+  | TyTop
 
 type eterm =
   | ETmVar of string

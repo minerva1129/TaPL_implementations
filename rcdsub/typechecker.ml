@@ -5,6 +5,7 @@ exception NoTypeRuleApplies
 let rec subtype tyS tyT =
   tyS = tyT ||
   match (tyS, tyT) with
+    | (_, TyTop) -> true
     | (TyArrow(tyS1, tyS2), TyArrow(tyT1, tyT2)) -> (subtype tyT1 tyS1) && (subtype tyS2 tyT2)
     | (TyRecord(fS), TyRecord(fT)) ->
         let st (li, tyTi) = (
