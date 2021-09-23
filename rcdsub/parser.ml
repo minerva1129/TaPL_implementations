@@ -16,6 +16,7 @@ type token_type =
   | Token_rbrace
   | Token_comma
   | Token_Top
+  | Token_Bot
   | Token_identifier of string
 
 let parse_token =
@@ -32,6 +33,7 @@ let parse_token =
   <|> (token "}" >> return Token_rbrace)
   <|> (token "," >> return Token_comma)
   <|> (token "Top" >> return Token_Top)
+  <|> (token "Bot" >> return Token_Bot)
   <|> ((lexeme ((lower <|> exactly '_') <~> many (alpha_num <|> exactly '_'))) => implode => (fun x -> Token_identifier x))
 
 let lex = (many parse_token << spaces) >>= eof
@@ -53,6 +55,7 @@ let parse_key_ty ty_parser =
 let parse_Unit = (exactly Token_Unit) >> return Syntax.TyUnit
 let parse_arrow = (exactly Token_arrow) >> return (fun l r -> Syntax.TyArrow(l, r))
 let parse_Top = (exactly Token_Top) >> return Syntax.TyTop
+let parse_Bot = (exactly Token_Bot) >> return Syntax.TyBot
 
 let parse_record_ty ty_parser =
   let* _ = (exactly Token_lbrace) in
@@ -60,7 +63,7 @@ let parse_record_ty ty_parser =
   let* _ = (exactly Token_rbrace) in
   return (Syntax.TyRecord(ls))
 
-let rec atomic_ty input = (parse_record_ty ty <|> parse_Unit <|> parse_Top <|> parens ty) input
+let rec atomic_ty input = (parse_record_ty ty <|> parse_Unit <|> parse_Top <|> parse_Bot <|> parens ty) input
 and ty input = chainr1 atomic_ty parse_arrow input
 
 let parse_identifier = token_identifier => fun x -> Syntax.ETmVar x

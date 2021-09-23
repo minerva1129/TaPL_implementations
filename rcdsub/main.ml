@@ -7,6 +7,7 @@ let rec string_of_ty = function
   | Syntax.TyArrow(tyT1, tyT2) -> "(" ^ (string_of_ty tyT1) ^ " -> " ^ (string_of_ty tyT2) ^ ")"
   | Syntax.TyRecord(ls) -> "{ " ^ (String.concat ", " (List.map (fun (k, t) -> k ^ ": " ^ (string_of_ty t)) ls)) ^ " }"
   | Syntax.TyTop -> "Top"
+  | Syntax.TyBot -> "Bot"
 
 let string_of_ty_opt tyT_opt = Option.value (Option.map string_of_ty tyT_opt) ~default: "Untyped"
 

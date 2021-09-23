@@ -6,6 +6,7 @@ let rec subtype tyS tyT =
   tyS = tyT ||
   match (tyS, tyT) with
     | (_, TyTop) -> true
+    | (TyBot, _) -> true
     | (TyArrow(tyS1, tyS2), TyArrow(tyT1, tyT2)) -> (subtype tyT1 tyS1) && (subtype tyS2 tyT2)
     | (TyRecord(fS), TyRecord(fT)) ->
         let st (li, tyTi) = (
@@ -25,6 +26,7 @@ let rec typeof context = function
           | Some(tyT) -> tyT
           | None -> raise NoSuchField
       )
+      | TyBot -> TyBot
       | _ -> raise NoTypeRuleApplies
   )
   | ITmVar(k) -> (
@@ -38,6 +40,7 @@ let rec typeof context = function
     let tyT2 = typeof context t2 in
     (match tyT1 with
         | TyArrow(tyT11, tyT12) -> if subtype tyT2 tyT11 then tyT12 else raise NoTypeRuleApplies
+        | TyBot -> TyBot
         | _ -> raise NoTypeRuleApplies
     )
   | ITmUnit -> TyUnit
