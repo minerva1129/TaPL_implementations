@@ -18,7 +18,7 @@ type eterm =
 type itype =
   | ITyUnit
   | ITyVar of int
-  | ITyArrow of itype
+  | ITyArrow of itype * itype
   | ITyAll of itype
 
 type iterm =

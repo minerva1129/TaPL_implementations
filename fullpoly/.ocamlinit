@@ -1,0 +1,12 @@
+#use "topfind";;
+#require "opal";;
+#load  "utils.cmo";;
+#load  "syntax.cmo";;
+#load  "lexer_and_parser.cmo";;
+#load  "compiler.cmo";;
+let input1 = Opal.LazyStream.of_string "\\A. \\x: A. \\X. \\g: A -> X. g x";;
+let input2 = Opal.LazyStream.of_string "\\A. \\h: (forall X. (A -> X) -> X). h [A] (\\x: A. x)";;
+let et1 = Lexer_and_parser.lex_and_parse input1;;
+let et2 = Lexer_and_parser.lex_and_parse input2;;
+let it1 = Compiler.remove_names [] [] et1;;
+let it2 = Compiler.remove_names [] [] et2;;
