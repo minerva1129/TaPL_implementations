@@ -3,3 +3,4 @@ build:
 
 clean:
 	rm -rf *.cmi *.cmo f
+	cp ~/.opam/default/lib/opal/opal.cmi .
