@@ -1,33 +1,28 @@
 open Syntax
 exception NoEvaluationRuleApplies
 
-let rec substitute j s = function
-  | ITmVar(k) -> if k = j
-    then s
-    else ITmVar(k)
-  | ITmAbs(tyT, t) -> ITmAbs(tyT, substitute (j + 1) (shift 1 s) t)
-  | ITmLet(t1, t2) -> ITmLet(substitute j s t1, substitute (j + 1) (shift 1 s) t2)
-  | t -> traverse_iterm (substitute j s) t
+let rec substitute_ty j tyS = function
+  | ITyVar(k) -> if k = j then tyS else ITyVar(k)
+  | ITyAll(tyT) -> ITyAll(substitute_ty (j + 1) (shift_ty 1 0 tyS) tyT)
+  | tyT -> traverse_ty (substitute_ty j tyS) tyT
 
-let rec eval_key_term eval_func = function
-  | [] -> raise NoEvaluationRuleApplies
-  | (k, t)::rest -> if (isval t)
-    then (k, t)::(eval_key_term eval_func rest)
-    else (k, eval_func t)::rest
+let rec substitute j s = function
+  | ITmVar(k) -> if k = j then s else ITmVar(k)
+  | ITmAbs(tyT, t) -> ITmAbs(tyT, substitute (j + 1) (shift 1 0 s) t)
+  | t -> traverse (substitute j s) t
+
+let rec substitute_ty_term j tyS = function
+  | ITmAbs(tyT, t) -> ITmAbs(substitute_ty j tyS tyT, substitute_ty_term j tyS t)
+  | ITmTAbs(t) -> ITmTAbs(substitute_ty_term (j + 1) (shift_ty 1 0 tyS) t)
+  | ITmTApp(t, tyT) -> ITmTApp(substitute_ty_term j tyS t, substitute_ty j tyS tyT)
+  | t -> traverse (substitute_ty_term j tyS) t
 
 let rec eval1 = function
-  | ITmApp(ITmAbs(_, t), v) when (isval v) -> shift (-1) (substitute 0 (shift 1 v) t)
+  | ITmApp(ITmAbs(_, t), v) when (isval v) -> shift (-1) 0 (substitute 0 (shift 1 0 v) t)
   | ITmApp(v1, t2) when (isval v1) -> let t2' = eval1 t2 in ITmApp(v1, t2')
   | ITmApp(t1, t2) -> let t1' = eval1 t1 in ITmApp(t1', t2)
-  | ITmLet(v1, t2) when (isval v1) -> shift (-1) (substitute 0 (shift 1 v1) t2)
-  | ITmLet(t1, t2) -> let t1' = eval1 t1 in ITmLet(t1', t2)
-  | ITmProj(ITmRecord(ls) as v, k) when (isval v) -> (
-    match List.assoc_opt k ls with
-      | Some(t) -> t
-      | None -> raise NoSuchField
-  )
-  | ITmProj(t, k) -> let t' = eval1 t in ITmProj(t', k)
-  | ITmRecord(ls) -> ITmRecord(eval_key_term eval1 ls)
+  | ITmTApp(ITmTAbs(t), tyT) -> shift_ty_term (-1) 0 (substitute_ty_term 0 (shift_ty 1 0 tyT) t)
+  | ITmTApp(t, tyT) -> let t' = eval1 t in ITmTApp(t', tyT)
   | _ -> raise NoEvaluationRuleApplies
 
 let rec eval t =
