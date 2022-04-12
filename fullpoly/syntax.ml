@@ -59,7 +59,24 @@ let rec shift_ty_term d c = function
   | ITmTApp(t, tyT) -> ITmTApp(shift_ty_term d c t, shift_ty d c tyT)
   | t -> traverse (shift_ty_term d c) t
 
+let rec substitute_ty j tyS = function
+  | ITyVar(k) -> if k = j then tyS else ITyVar(k)
+  | ITyAll(tyT) -> ITyAll(substitute_ty (j + 1) (shift_ty 1 0 tyS) tyT)
+  | tyT -> traverse_ty (substitute_ty j tyS) tyT
+
+let rec substitute j s = function
+  | ITmVar(k) -> if k = j then s else ITmVar(k)
+  | ITmAbs(tyT, t) -> ITmAbs(tyT, substitute (j + 1) (shift 1 0 s) t)
+  | t -> traverse (substitute j s) t
+
+let rec substitute_ty_term j tyS = function
+  | ITmAbs(tyT, t) -> ITmAbs(substitute_ty j tyS tyT, substitute_ty_term j tyS t)
+  | ITmTAbs(t) -> ITmTAbs(substitute_ty_term (j + 1) (shift_ty 1 0 tyS) t)
+  | ITmTApp(t, tyT) -> ITmTApp(substitute_ty_term j tyS t, substitute_ty j tyS tyT)
+  | t -> traverse (substitute_ty_term j tyS) t
+
 let rec isval = function
-  | ITmAbs(_, _) -> true
   | ITmUnit -> true
+  | ITmAbs(_, _) -> true
+  | ITmTAbs(_) -> true
   | _ -> false

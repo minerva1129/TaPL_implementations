@@ -4,9 +4,19 @@
 #load  "syntax.cmo";;
 #load  "lexer_and_parser.cmo";;
 #load  "compiler.cmo";;
+#load  "evaluator.cmo";;
+#load  "typechecker.cmo";;
+(* isomorphisms between A and Ã = ∀X. (A -> X) -> X *)
+(* i: ∀A. A -> Ã *)
 let input1 = Opal.LazyStream.of_string "\\A. \\x: A. \\X. \\g: A -> X. g x";;
+(* j: ∀A. Ã -> A *)
 let input2 = Opal.LazyStream.of_string "\\A. \\h: (forall X. (A -> X) -> X). h [A] (\\x: A. x)";;
 let et1 = Lexer_and_parser.lex_and_parse input1;;
 let et2 = Lexer_and_parser.lex_and_parse input2;;
 let it1 = Compiler.remove_names [] [] et1;;
 let it2 = Compiler.remove_names [] [] et2;;
+let i = it1;;
+let j = it2;;
+open Syntax;;
+(* (j [Unit]) \circ (i [Unit]) = id [Unit] *)
+let j_i = ITmApp(ITmTApp(j, ITyUnit), ITmApp(ITmTApp(i, ITyUnit), ITmUnit));;
