@@ -35,13 +35,13 @@ let traverse_ty f = function
   | ITyArrow(tyT1, tyT2) -> ITyArrow(f tyT1, f tyT2)
   | ITyAll(tyT) -> ITyAll(f tyT)
 
-let traverse f = function
+let traverse f g = function
   | ITmUnit -> ITmUnit
   | ITmVar(k) -> ITmVar(k)
-  | ITmAbs(tyT, t) -> ITmAbs(tyT, f t)
+  | ITmAbs(tyT, t) -> ITmAbs(g tyT, f t)
   | ITmApp(t1, t2) -> ITmApp(f t1, f t2)
   | ITmTAbs(t) -> ITmTAbs(f t)
-  | ITmTApp(t, tyT) -> ITmTApp(f t, tyT) 
+  | ITmTApp(t, tyT) -> ITmTApp(f t, g tyT) 
 
 let rec shift_ty d c = function
   | ITyVar(k) -> if k < c then ITyVar(k) else ITyVar(k + d)
@@ -51,13 +51,11 @@ let rec shift_ty d c = function
 let rec shift d c = function
   | ITmVar(k) -> if k < c then ITmVar(k) else ITmVar(k + d)
   | ITmAbs(tyT, t) -> ITmAbs(tyT, shift d (c + 1) t)
-  | t -> traverse (shift d c) t
+  | t -> traverse (shift d c) Fun.id t
 
 let rec shift_ty_term d c = function
-  | ITmAbs(tyT, t) -> ITmAbs(shift_ty d c tyT, shift_ty_term d c t)
   | ITmTAbs(t) -> ITmTAbs(shift_ty_term d (c + 1) t)
-  | ITmTApp(t, tyT) -> ITmTApp(shift_ty_term d c t, shift_ty d c tyT)
-  | t -> traverse (shift_ty_term d c) t
+  | t -> traverse (shift_ty_term d c) (shift_ty d c) t
 
 let rec substitute_ty j tyS = function
   | ITyVar(k) -> if k = j then tyS else ITyVar(k)
@@ -67,13 +65,11 @@ let rec substitute_ty j tyS = function
 let rec substitute j s = function
   | ITmVar(k) -> if k = j then s else ITmVar(k)
   | ITmAbs(tyT, t) -> ITmAbs(tyT, substitute (j + 1) (shift 1 0 s) t)
-  | t -> traverse (substitute j s) t
+  | t -> traverse (substitute j s) Fun.id t
 
 let rec substitute_ty_term j tyS = function
-  | ITmAbs(tyT, t) -> ITmAbs(substitute_ty j tyS tyT, substitute_ty_term j tyS t)
   | ITmTAbs(t) -> ITmTAbs(substitute_ty_term (j + 1) (shift_ty 1 0 tyS) t)
-  | ITmTApp(t, tyT) -> ITmTApp(substitute_ty_term j tyS t, substitute_ty j tyS tyT)
-  | t -> traverse (substitute_ty_term j tyS) t
+  | t -> traverse (substitute_ty_term j tyS) (substitute_ty j tyS) t
 
 let rec isval = function
   | ITmUnit -> true
