@@ -41,7 +41,7 @@ let traverse f g = function
   | ITmAbs(tyT, t) -> ITmAbs(g tyT, f t)
   | ITmApp(t1, t2) -> ITmApp(f t1, f t2)
   | ITmTAbs(t) -> ITmTAbs(f t)
-  | ITmTApp(t, tyT) -> ITmTApp(f t, g tyT) 
+  | ITmTApp(t, tyT) -> ITmTApp(f t, g tyT)
 
 let rec shift_ty d c = function
   | ITyVar(k) -> if k < c then ITyVar(k) else ITyVar(k + d)

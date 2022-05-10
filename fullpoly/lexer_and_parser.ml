@@ -39,7 +39,7 @@ let (<*>) xf x = xf >>= fun f -> x >>= f % return
 let (let*) = (>>=)
 let foldl x y =
   let rec loop a = ((y <*> return a) >>= loop) <|> return a in
-  x >>= loop 
+  x >>= loop
 
 let parse_Unit = (exactly TkUpUnit) >> return Syntax.ETyUnit
 let parse_upper_identifier = any >>= function
